@@ -1,16 +1,38 @@
 # Study Planner for Android
 
-## Open and run
+The Android Studio project for the mobile app. For setup instructions covering both web and Android, see the [repository README](../README.md).
 
-1. In Android Studio, choose **Open** and select this `android` folder.
-2. Allow Gradle sync to download the build plugins and AndroidX WebKit. Keep Android Studio online during the first sync.
-3. If prompted to install an SDK, choose Android SDK Platform 37.
-4. Select the `Medium_Phone_API_37.0` emulator or a connected Android phone, then run the `app` configuration.
+## Requirements
 
-The project uses Android Gradle Plugin 9.4.0 with Gradle 9.6.0 to match the API 37 SDK installed on this computer. Android Gradle Plugin 9.4 supports API 37 and requires Gradle 9.6.0.
+- Android Studio with Android SDK Platform 37.
+- An Android device with USB debugging enabled or an emulator.
+- Internet access for the first Gradle sync.
 
-## What is included
+This project uses Android Gradle Plugin 9.4.0 and Gradle 9.6.0. Android Studio can download the Gradle version and Android dependencies during sync.
 
-The app is a native Android shell around the existing planner interface. HTML, styles, scripts, and the logo are bundled under `app/src/main/assets`. Android's `WebViewAssetLoader` serves these files at a secure in-app HTTPS origin. The planner saves to Android WebView LocalStorage on this device.
+## Install and run from Android Studio
 
-Sign-in is currently a non-functional placeholder. It does not transmit or save credentials. The web app and this Android app do not share data yet; that needs a real account service and server-side sync.
+1. Open this `android` folder in Android Studio.
+2. Wait for Gradle sync. Install Android SDK Platform 37 if prompted.
+3. Connect a phone or start an emulator.
+4. Choose the `app` run configuration and press **Run**.
+5. Allow notifications if you want task reminders and alarms.
+
+## Build an APK on Windows
+
+From the repository root in PowerShell:
+
+```powershell
+cd android
+.\gradlew.bat assembleDebug
+```
+
+The debug APK will be at `app/build/outputs/apk/debug/app-debug.apk`. Copy it to an Android phone and open it to install. Android may ask you to permit installs from the app opening the APK. For distribution, create a signed release build in Android Studio and keep the signing key and its passwords private.
+
+## Firebase and data
+
+The app uses the included `app/google-services.json` to connect to the repository's configured Firebase project. It supports Firebase email/password sign-in and stores signed-in planner data in Firestore, shared with the web app. Firestore access is controlled by the repository's `firestore.rules`.
+
+If using a different Firebase project, register an Android app with application ID `com.studyplanner.app` and replace `app/google-services.json`. Also update the web Firebase configuration and publish the matching Firestore rules; the full instructions are in the [repository README](../README.md#firebase-setup).
+
+The planner interface is bundled in `app/src/main/assets`. Keep its HTML, CSS, JavaScript, and images aligned with the matching web app files when changing the UI.
