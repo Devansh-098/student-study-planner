@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner</title>
+    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('studyPlannerTheme') === 'dark' ? 'dark' : 'light');
+    </script>
+</head>
+
+<body>
+    <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+        <div class="welcome-card">
+            <div class="welcome-logo"><img src="assets/images/logo.svg" alt=""></div>
+            <p class="welcome-eyebrow">YOUR STUDY SPACE</p>
+            <h1 id="welcomeTitle">Make time for what matters.</h1>
+            <p class="welcome-copy">Plan your study sessions, stay on top of deadlines, and keep your planner synced across devices.</p>
+            <form id="signInForm" class="welcome-form">
+                <label class="field"><span>Email address</span><input type="email" id="signInEmail" autocomplete="email" placeholder="you@example.com" required></label>
+                <label class="field"><span>Password</span><input type="password" id="signInPassword" autocomplete="current-password" placeholder="Enter your password" required></label>
+                <button class="btn btn-primary welcome-signin" type="submit">Sign in</button>
+                <button class="link-btn auth-mode-toggle" id="authModeToggle" type="button">Create an account</button>
+            </form>
+            <p class="auth-note" id="authNote" role="status">Sign in with the same account you use in the Study Planner Android app.</p>
+            <div class="welcome-divider"><span>OR</span></div>
+            <button class="btn btn-light welcome-offline" id="continueOffline" type="button">Continue on this device</button>
+            <p class="welcome-footnote">Offline changes stay on this device until you sign in.</p>
+        </div>
+    </section>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="assets/images/logo.svg" alt="Study Planner logo" class="brand-logo">
+                <span class="brand-name">Study Planner</span>
+            </div>
+
+            <nav class="nav" aria-label="Main navigation">
+                <button class="nav-link" data-action="navigate" data-page="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+                <!-- hi this is a comment -->
+                <button class="nav-link" data-action="navigate" data-page="subjects">
+          <i data-lucide="book-open"></i>
+          <span>Subjects</span>
+        </button>
+                <button class="nav-link" data-action="navigate" data-page="planner">
+          <i data-lucide="calendar-days"></i>
+          <span>Planner</span>
+        </button>
+                <button class="nav-link" data-action="navigate" data-page="focus">
+          <i data-lucide="timer"></i>
+          <span>Focus</span>
+        </button>
+                <button class="nav-link" data-action="navigate" data-page="progress">
+          <i data-lucide="chart-column"></i>
+          <span>Progress</span>
+        </button>
+                <button class="nav-link" data-action="navigate" data-page="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </button>
+                <button class="nav-link admin-nav-link" id="adminNavLink" data-action="navigate" data-page="admin" hidden>
+          <i data-lucide="shield-check"></i>
+          <span>Admin</span>
+        </button>
+            </nav>
+        </aside>
+
+        <main class="main">
+            <div class="content">
+                <div class="global-announcement" id="globalAnnouncement" hidden></div>
+                <header class="topbar">
+                    <div class="topbar-brand">
+                        <img src="assets/images/logo.svg" alt="" class="brand-logo">
+                        <span class="brand-name">Study Planner</span>
+                    </div>
+                    <div class="greeting">
+                        <h1 id="greeting">Hello!</h1>
+                        <p id="todayDate"></p>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="icon-btn" id="themeToggle" data-action="toggle-theme" title="Switch to dark mode" aria-label="Switch to dark mode">
+              <i data-lucide="moon"></i>
+            </button>
+                        <button class="btn btn-primary" data-action="add-task" aria-label="Add task">
+              <i data-lucide="plus"></i>
+              <span class="hide-on-mobile">Add Task</span>
+            </button>
+                    </div>
+                </header>
+
+                <section class="page" id="page-dashboard">
+                    <div class="stats-grid">
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-blue"><i data-lucide="book-open"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Total Subjects</p>
+                                <p class="stat-value" id="statSubjects">0</p>
+                                <p class="stat-note" id="statSubjectsNote"></p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-purple"><i data-lucide="calendar-check"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Today's Tasks</p>
+                                <p class="stat-value" id="statToday">0</p>
+                                <p class="stat-note" id="statTodayNote"></p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-green"><i data-lucide="circle-check"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Completed Tasks</p>
+                                <p class="stat-value" id="statCompleted">0</p>
+                                <p class="stat-note" id="statCompletedNote"></p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-orange"><i data-lucide="trending-up"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Overall Progress</p>
+                                <p class="stat-value" id="statProgress">0%</p>
+                                <div class="mini-bar"><span id="statProgressBar"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="dashboard-column">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h2 class="card-title">Today's Tasks</h2>
+                                        <p class="card-subtitle" id="todaySummary"></p>
+                                    </div>
+                                    <button class="link-btn" data-action="navigate" data-page="planner">View all</button>
+                                </div>
+                                <div id="overdueNotice"></div>
+                                <div class="task-list" id="todayTaskList"></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h2 class="card-title">Progress Overview</h2>
+                                        <p class="card-subtitle">Based on completed tasks</p>
+                                    </div>
+                                    <button class="link-btn" data-action="navigate" data-page="progress">Details</button>
+                                </div>
+                                <div class="progress-overview">
+                                    <div class="ring-wrapper">
+                                        <div class="progress-ring" id="overallRing">
+                                            <div class="ring-inner">
+                                                <strong id="overallRingValue">0%</strong>
+                                                <span>complete</span>
+                                            </div>
+                                        </div>
+                                        <p class="ring-caption" id="overallRingCaption"></p>
+                                    </div>
+                                    <div class="subject-progress-list" id="dashboardSubjectProgress"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-column">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Upcoming Exams</h2>
+                                    <button class="link-btn" data-action="navigate" data-page="subjects">Manage</button>
+                                </div>
+                                <div class="simple-list" id="examList"></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h2 class="card-title">Study Streak</h2>
+                                </div>
+                                <div class="streak-summary">
+                                    <div class="streak-main">
+                                        <div class="streak-icon"><i data-lucide="flame"></i></div>
+                                        <div>
+                                            <p class="streak-count" id="streakCount">0 days</p>
+                                            <p class="streak-label">Current streak</p>
+                                        </div>
+                                    </div>
+                                    <div class="streak-total">
+                                        <p class="streak-count" id="streakDays">0</p>
+                                        <p class="streak-label">Study days</p>
+                                    </div>
+                                </div>
+                                <div class="streak-week" id="streakWeek"></div>
+                                <p class="streak-message" id="streakMessage"></p>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h2 class="card-title">Upcoming Deadlines</h2>
+                                        <p class="card-subtitle">Next 14 days</p>
+                                    </div>
+                                </div>
+                                <div class="simple-list" id="deadlineList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-focus">
+                    <div class="page-header"><div><h2 class="page-title">Focus tools</h2><p class="page-subtitle">Settle in with a study timer, alarm, and clock.</p></div></div>
+                    <div class="focus-grid">
+                        <div class="card flip-clock-card"><div class="clock-orbit" aria-hidden="true"></div><p class="focus-kicker">A MOMENT FOR YOU</p><div class="flip-clock" aria-live="off"><span id="flipHours">00</span><b>:</b><span id="flipMinutes">00</span><b class="flip-seconds-colon">:</b><span class="flip-seconds" id="flipSeconds">00</span></div><p id="focusDateLabel" class="card-subtitle"></p><p class="clock-caption">Take a breath. Choose one thing to focus on.</p></div>
+                        <div class="card pomodoro-card"><div class="focus-card-heading"><div class="focus-icon focus-icon-purple"><i data-lucide="hourglass"></i></div><div><h2 class="card-title">Pomodoro timer</h2><p class="card-subtitle" id="pomodoroMode">Focus session · 25 minutes</p></div></div><div class="pomodoro-time" id="pomodoroDisplay">25:00</div><div class="pomodoro-progress"><span id="pomodoroProgress"></span></div><div class="timer-controls"><button class="btn btn-primary" id="pomodoroStart">Start focus</button><button class="btn btn-light" id="pomodoroReset" aria-label="Reset timer"><i data-lucide="rotate-ccw"></i></button></div><p class="focus-tip"><i data-lucide="sparkles"></i> 25 min focus <span>·</span> 5 min rest</p></div>
+                        <div class="card alarm-card"><div class="focus-card-heading"><div class="focus-icon focus-icon-orange"><i data-lucide="alarm-clock"></i></div><div><h2 class="card-title">Study alarm</h2><p class="card-subtitle">We’ll remind you when it’s time.</p></div></div><form id="alarmForm" class="alarm-form"><fieldset class="alarm-time-fields"><legend>Choose a time</legend><label class="alarm-select-wrap"><span class="sr-only">Hour</span><select id="alarmHour" aria-label="Hour"></select><small>HOUR</small></label><b class="alarm-time-colon">:</b><label class="alarm-select-wrap"><span class="sr-only">Minute</span><select id="alarmMinute" aria-label="Minute"></select><small>MIN</small></label><label class="alarm-select-wrap alarm-period"><span class="sr-only">AM or PM</span><select id="alarmPeriod" aria-label="AM or PM"><option value="AM">AM</option><option value="PM">PM</option></select><small>PERIOD</small></label></fieldset><div class="alarm-actions"><button class="btn btn-primary" type="submit" id="alarmSetButton"><i data-lucide="bell"></i> Set alarm</button><button class="btn btn-light" type="button" id="alarmCancelButton" hidden>Cancel alarm</button></div></form><div class="alarm-status-box" id="alarmStatusBox"><i data-lucide="bell-off" id="alarmStatusIcon"></i><p id="alarmStatus" role="status">No alarm set. Choose a time above to get started.</p></div><div class="alarm-sound-setting"><div class="alarm-sound-icon"><i data-lucide="music-2"></i></div><div class="alarm-sound-copy"><strong>Alarm sound</strong><span id="alarmSoundName">Default notification sound</span></div><label class="btn btn-light alarm-file-button"><i data-lucide="folder-open"></i> Choose MP3<input type="file" id="alarmSoundFile" accept=".mp3,audio/mpeg"></label><button type="button" class="icon-btn small" id="clearAlarmSound" aria-label="Use default alarm sound" title="Use default sound" hidden><i data-lucide="x"></i></button><audio id="alarmSoundPreview" controls hidden></audio></div><p class="alarm-footnote"><i data-lucide="info"></i> Keep the web planner open for browser alarms.</p></div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-subjects">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Subjects</h2>
+                            <p class="page-subtitle">Manage the subjects you are preparing for this semester.</p>
+                        </div>
+                        <button class="btn btn-primary" data-action="add-subject">
+              <i data-lucide="plus"></i>
+              Add Subject
+            </button>
+                    </div>
+                    <div class="subject-grid" id="subjectGrid"></div>
+                </section>
+
+                <section class="page" id="page-planner">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Weekly Planner</h2>
+                            <p class="page-subtitle" id="weekRangeLabel"></p>
+                        </div>
+                        <div class="week-controls">
+                            <button class="icon-btn" data-action="week-prev" title="Previous week" aria-label="Previous week">
+                <i data-lucide="chevron-left"></i>
+              </button>
+                            <button class="btn btn-light" data-action="week-current">This Week</button>
+                            <button class="icon-btn" data-action="week-next" title="Next week" aria-label="Next week">
+                <i data-lucide="chevron-right"></i>
+              </button>
+                        </div>
+                    </div>
+
+                    <div class="week-grid" id="weekGrid"></div>
+
+                    <div class="card" id="allTasksCard">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">All Tasks</h2>
+                                <p class="card-subtitle" id="taskCountLabel"></p>
+                            </div>
+                            <button class="btn btn-primary" data-action="add-task" aria-label="Add task">
+                <i data-lucide="plus"></i>
+                <span class="hide-on-mobile">Add Task</span>
+              </button>
+                        </div>
+
+                        <div class="filters">
+                            <select id="filterSubject" class="input" aria-label="Filter by subject"></select>
+                            <select id="filterPriority" class="input" aria-label="Filter by priority">
+                <option value="all">All priorities</option>
+                <option value="high">High priority</option>
+                <option value="medium">Medium priority</option>
+                <option value="low">Low priority</option>
+              </select>
+                            <select id="filterStatus" class="input" aria-label="Filter by status">
+                <option value="all">All status</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+              </select>
+                            <button class="btn btn-ghost" id="clearFiltersBtn" data-action="clear-filters" hidden>
+                <i data-lucide="x"></i>
+                Clear filters
+              </button>
+                        </div>
+
+                        <div class="task-list" id="allTaskList"></div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-progress">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Progress</h2>
+                            <p class="page-subtitle">Track how your exam preparation is going.</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-orange"><i data-lucide="target"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Overall Completion</p>
+                                <p class="stat-value" id="progOverall">0%</p>
+                                <p class="stat-note">of all planned tasks</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-green"><i data-lucide="circle-check"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Completed Tasks</p>
+                                <p class="stat-value" id="progCompleted">0</p>
+                                <p class="stat-note">tasks finished</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-red"><i data-lucide="hourglass"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Pending Tasks</p>
+                                <p class="stat-value" id="progPending">0</p>
+                                <p class="stat-note">still to do</p>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="stat-icon tone-blue"><i data-lucide="timer"></i></div>
+                            <div class="stat-content">
+                                <p class="stat-label">Study Time</p>
+                                <p class="stat-value" id="progHours">0 min</p>
+                                <p class="stat-note">in the last 7 days</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <h2 class="card-title">Weekly Study Activity</h2>
+                                    <p class="card-subtitle">Hours of study completed in the last 7 days</p>
+                                </div>
+                            </div>
+                            <div class="chart-box" id="chartBox">
+                                <canvas id="activityChart" role="img" aria-label="Bar chart of hours studied in the last 7 days"></canvas>
+                            </div>
+                            <p class="chart-fallback" id="chartFallback" hidden>The chart could not be loaded. Please check your internet connection and refresh the page.</p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <h2 class="card-title">Pending by Priority</h2>
+                                    <p class="card-subtitle">What is still left to study</p>
+                                </div>
+                            </div>
+                            <div class="priority-list" id="priorityBreakdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">Subject-wise Completion</h2>
+                                <p class="card-subtitle">The small line on each bar marks your target for that subject</p>
+                            </div>
+                        </div>
+                        <div class="completion-list" id="subjectCompletionList"></div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-settings">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Settings</h2>
+                            <p class="page-subtitle">Personalise the planner and manage your saved data.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="card">
+                            <h2 class="card-title">Profile</h2>
+                            <p class="card-subtitle settings-hint">Your name is shown in the greeting at the top.</p>
+                            <form class="settings-form" id="profileForm">
+                                <label class="field">
+                  <span>Your name</span>
+                  <input type="text" id="studentNameInput" maxlength="24" placeholder="Enter your name">
+                </label>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+
+                        <div class="card" id="accountCard" hidden>
+                            <h2 class="card-title">Account</h2>
+                            <p class="card-subtitle settings-hint" id="accountEmail"></p>
+                            <p class="card-subtitle settings-hint">Your planner syncs with your Firebase account.</p>
+                            <button class="btn btn-light" id="signOutButton" type="button">Sign out</button>
+                        </div>
+
+                        <div class="card">
+                            <h2 class="card-title">Appearance</h2>
+                            <div class="switch-row">
+                                <div>
+                                    <p class="setting-name">Dark mode</p>
+                                    <p class="card-subtitle">Easier on the eyes during late-night study sessions.</p>
+                                </div>
+                                <label class="switch">
+                  <input type="checkbox" id="darkModeSwitch" aria-label="Dark mode">
+                  <span class="switch-slider"></span>
+                </label>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2 class="card-title">Your Data</h2>
+                            <p class="card-subtitle settings-hint">Everything is saved in this browser using LocalStorage. Nothing is uploaded anywhere.</p>
+                            <ul class="data-summary" id="dataSummary"></ul>
+                            <div class="settings-actions">
+                                <button class="btn btn-light" data-action="load-sample">
+                  <i data-lucide="rotate-ccw"></i>
+                  Load sample data
+                </button>
+                                <button class="btn btn-danger" data-action="clear-data">
+                  <i data-lucide="trash-2"></i>
+                  Clear all data
+                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-admin">
+                    <div class="page-header"><div><h2 class="page-title">Admin console</h2><p class="page-subtitle">Manage the shared app experience and account access.</p></div><button class="btn btn-light" type="button" id="refreshAdminUsers"><i data-lucide="refresh-cw"></i> Refresh users</button></div>
+                    <div class="admin-summary-grid">
+                        <div class="card admin-stat"><span class="admin-stat-icon"><i data-lucide="users"></i></span><div><strong id="adminUserCount">—</strong><small>Accounts</small></div></div>
+                        <div class="card admin-stat"><span class="admin-stat-icon"><i data-lucide="book-open"></i></span><div><strong id="adminSubjectCount">—</strong><small>Subjects</small></div></div>
+                        <div class="card admin-stat"><span class="admin-stat-icon"><i data-lucide="list-checks"></i></span><div><strong id="adminTaskCount">—</strong><small>Planned tasks</small></div></div>
+                    </div>
+                    <div class="admin-layout">
+                        <div class="card admin-config-card">
+                            <div class="card-header"><div><h2 class="card-title">App-wide appearance</h2><p class="card-subtitle">Changes sync to the website and Android app.</p></div><span class="admin-live-pill"><i></i> LIVE</span></div>
+                            <form id="adminConfigForm" class="admin-config-form">
+                                <label class="field"><span>App name</span><input id="adminBrandName" maxlength="32" value="Study Planner" required></label>
+                                <label class="field"><span>Announcement for users</span><textarea id="adminAnnouncement" maxlength="180" rows="3" placeholder="Optional message shown at the top of the app"></textarea></label>
+                                <label class="field admin-color-field"><span>Accent colour</span><input type="color" id="adminAccentColor" value="#5a5fd6"></label>
+                                <fieldset class="admin-feature-field"><legend>Show these sections</legend><div class="admin-feature-options"><label><input type="checkbox" id="adminFeatureSubjects" checked> Subjects</label><label><input type="checkbox" id="adminFeaturePlanner" checked> Planner</label><label><input type="checkbox" id="adminFeatureFocus" checked> Focus tools</label><label><input type="checkbox" id="adminFeatureProgress" checked> Progress</label></div></fieldset>
+                                <button class="btn btn-primary" type="submit"><i data-lucide="save"></i> Publish to all devices</button>
+                                <p id="adminConfigStatus" class="card-subtitle" role="status">Only admins can change these settings.</p>
+                            </form>
+                        </div>
+                        <div class="card admin-users-card">
+                            <div class="card-header"><div><h2 class="card-title">User accounts</h2><p class="card-subtitle">Planner data is private to each user except in this admin console.</p></div></div>
+                            <p id="adminUsersStatus" class="card-subtitle" role="status">Loading account list…</p>
+                            <div id="adminUsersList" class="admin-users-list"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <dialog class="modal" id="taskDialog">
+        <form class="modal-form" id="taskForm">
+            <div class="modal-header">
+                <h2 id="taskDialogTitle">Add Task</h2>
+                <button type="button" class="icon-btn small" data-action="close-dialog" aria-label="Close">
+          <i data-lucide="x"></i>
+        </button>
+            </div>
+            <div class="modal-body">
+                <label class="field">
+          <span>Task title</span>
+          <input type="text" id="taskTitle" maxlength="80" required pattern=".*\S.*" title="Please enter a task title" placeholder="e.g. Solve PDE classification problems">
+        </label>
+                <label class="field">
+          <span>Subject</span>
+          <select id="taskSubject" required></select>
+        </label>
+                <div class="field-row">
+                    <label class="field">
+            <span>Study date</span>
+            <input type="date" id="taskDate" required>
+          </label>
+                    <label class="field">
+            <span>Deadline <em>(optional)</em></span>
+            <input type="date" id="taskDeadline">
+          </label>
+                </div>
+                <label class="field"><span>Reminder <em>(optional)</em></span><input type="time" id="taskReminder"><small class="field-help">At this time on the study date, the app can remind you about this task.</small></label>
+                <div class="field-row">
+                    <label class="field">
+            <span>Priority</span>
+            <select id="taskPriority">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+                    <label class="field">
+            <span>Estimated time (minutes)</span>
+            <input type="number" id="taskDuration" min="5" max="600" step="5" required>
+          </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-action="close-dialog">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="taskSubmitBtn">Add Task</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="modal" id="subjectDialog">
+        <form class="modal-form" id="subjectForm">
+            <div class="modal-header">
+                <h2 id="subjectDialogTitle">Add Subject</h2>
+                <button type="button" class="icon-btn small" data-action="close-dialog" aria-label="Close">
+          <i data-lucide="x"></i>
+        </button>
+            </div>
+            <div class="modal-body">
+                <label class="field">
+          <span>Subject name</span>
+          <input type="text" id="subjectName" maxlength="40" required pattern=".*\S.*" title="Please enter a subject name" placeholder="e.g. Signals and Systems">
+        </label>
+                <div class="field-row">
+                    <label class="field">
+            <span>Exam date <em>(optional)</em></span>
+            <input type="date" id="subjectExamDate">
+          </label>
+                    <label class="field">
+            <span>Target completion: <strong id="subjectTargetValue">80%</strong></span>
+            <input type="range" id="subjectTarget" min="10" max="100" step="5" value="80">
+          </label>
+                </div>
+                <div class="field">
+                    <span>Colour</span>
+                    <div class="swatch-group" id="colorOptions"></div>
+                </div>
+                <div class="field">
+                    <span>Icon</span>
+                    <div class="icon-options" id="iconOptions"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-action="close-dialog">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="subjectSubmitBtn">Add Subject</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="modal modal-small" id="confirmDialog">
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon"><i data-lucide="triangle-alert"></i></div>
+            <h2 id="confirmTitle">Are you sure?</h2>
+            <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-action="close-dialog">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmButton" data-action="confirm-action">Delete</button>
+        </div>
+    </dialog>
+
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
+    <script src="js/script.js"></script>
+</body>
+
+</html>
+

@@ -1,0 +1,13 @@
+{
+  "name": "Study Planner",
+  "short_name": "Study Planner",
+  "description": "Plan study sessions and keep track of your progress.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f5fa",
+  "theme_color": "#5a5fd6",
+  "icons": [
+    { "src": "assets/images/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
