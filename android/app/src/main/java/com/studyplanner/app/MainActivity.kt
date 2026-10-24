@@ -80,6 +80,13 @@ class MainActivity : Activity() {
         }
 
         plannerView.webViewClient = object : WebViewClientCompat() {
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+                if (url.startsWith("https://appassets.androidplatform.net/assets/index.html")) {
+                    view.evaluateJavascript("window.StudyPlannerFirebase && window.StudyPlannerFirebase.restoreSession()", null)
+                }
+            }
+
             override fun shouldInterceptRequest(
                 view: WebView,
                 request: WebResourceRequest
@@ -121,6 +128,7 @@ class MainActivity : Activity() {
         private val database = FirebaseFirestore.getInstance()
         private var plannerListener: ListenerRegistration? = null
         private var interfaceListener: ListenerRegistration? = null
+        private var sessionRestoreStarted = false
 
         @JavascriptInterface
         fun signIn(email: String, password: String) {
@@ -138,12 +146,16 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun restoreSession() {
-            val user = auth.currentUser
-            if (user == null) {
-                runJs("window.onFirebaseSessionRestored && window.onFirebaseSessionRestored(null)")
-            } else {
-                loadPlannerFor(user.uid, user.email)
+            if (sessionRestoreStarted) return
+            sessionRestoreStarted = true
+            val listener = object : FirebaseAuth.AuthStateListener {
+                override fun onAuthStateChanged(firebaseAuth: FirebaseAuth) {
+                    firebaseAuth.removeAuthStateListener(this)
+                    val user = firebaseAuth.currentUser
+                    if (user != null) loadPlannerFor(user.uid, user.email)
+                }
             }
+            auth.addAuthStateListener(listener)
         }
 
         @JavascriptInterface
