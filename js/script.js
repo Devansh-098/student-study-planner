@@ -21,6 +21,7 @@ let pendingConfirmAction = null;
 let activityChart = null;
 let authMode = 'signin';
 let cloudSaveTimer = null;
+let firebaseSignedIn = false;
 let pomodoroInterval = null;
 let pomodoroRemaining = 25 * 60;
 let pomodoroRunning = false;
@@ -211,13 +212,99 @@ function saveState() {
     syncTaskReminders();
     if (window.StudyPlannerFirebase?.savePlannerData) {
       clearTimeout(cloudSaveTimer);
+      if (firebaseSignedIn) setSyncStatus('syncing');
       cloudSaveTimer = setTimeout(() => {
         window.StudyPlannerFirebase.savePlannerData(JSON.stringify(state));
       }, 700);
+    } else {
+      setSyncStatus(firebaseSignedIn ? 'error' : 'local');
     }
   } catch (error) {
+    setSyncStatus('error');
     showToast('Your changes could not be saved in this browser.', 'error');
   }
+}
+
+function setSyncStatus(status) {
+  const label = byId('syncStatus');
+  if (!label) return;
+  const messages = {
+    local: 'Saved on this device. Sign in to sync across devices.',
+    syncing: 'Saved on this device. Syncing to your account…',
+    synced: 'Up to date. Your planner is synced to your account.',
+    error: 'Saved on this device, but cloud sync failed. Check your connection and retry.'
+  };
+  label.textContent = messages[status] || messages.local;
+  label.dataset.state = status;
+  byId('retrySyncButton').hidden = status !== 'error' || !firebaseSignedIn;
+}
+
+function retryCloudSync() {
+  if (!firebaseSignedIn || !window.StudyPlannerFirebase?.savePlannerData) return;
+  setSyncStatus('syncing');
+  window.StudyPlannerFirebase.savePlannerData(JSON.stringify(state));
+}
+
+function exportPlannerBackup() {
+  const backup = JSON.stringify({
+    format: 'student-study-planner-backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state
+  }, null, 2);
+  const filename = `study-planner-backup-${todayKey()}.json`;
+  if (window.StudyPlannerFirebase?.exportBackup) {
+    window.StudyPlannerFirebase.exportBackup(filename, backup);
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function handleBackupImport(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('That backup is larger than 10 MB and cannot be restored.', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => showToast('Could not read that backup file.', 'error');
+  reader.onload = () => {
+    try {
+      const backup = JSON.parse(String(reader.result || ''));
+      if (backup.format !== 'student-study-planner-backup' || ![1].includes(backup.version)) throw new Error('This is not a supported Study Planner backup.');
+      const data = backup.data;
+      if (!data || !Array.isArray(data.subjects) || !Array.isArray(data.tasks) || !data.studyLog || typeof data.studyLog !== 'object' || Array.isArray(data.studyLog)) throw new Error('The backup file is missing planner data.');
+      if (!data.subjects.every(subject => subject && typeof subject.id === 'string' && typeof subject.name === 'string') || !data.tasks.every(task => task && typeof task.id === 'string' && typeof task.title === 'string' && typeof task.subjectId === 'string' && typeof task.date === 'string')) throw new Error('The backup contains invalid subjects or tasks.');
+      const restored = {
+        subjects: data.subjects,
+        tasks: data.tasks,
+        studyLog: data.studyLog || {},
+        studentName: typeof data.studentName === 'string' ? data.studentName.slice(0, 24) : ''
+      };
+      askConfirmation({
+        title: 'Restore this backup?',
+        message: 'This replaces the current planner on this device. If you are signed in, the restored planner will sync to your account and other devices.',
+        confirmLabel: 'Restore Backup',
+        onConfirm: () => {
+          state = restored;
+          refresh();
+          showToast('Backup restored.', 'success');
+        }
+      });
+    } catch (error) {
+      showToast(error.message || 'That backup file could not be restored.', 'error');
+    }
+  };
+  reader.readAsText(file);
 }
 
 function refresh() {
@@ -846,6 +933,9 @@ function renderSettings() {
     <li><strong>${state.subjects.length}</strong>Subjects</li>
     <li><strong>${state.tasks.length}</strong>Tasks</li>
     <li><strong>${getStudyDayCount()}</strong>Study days</li>`;
+  byId('dataStorageCopy').textContent = firebaseSignedIn
+    ? 'Your planner is saved on this device and synced to your Firebase account.'
+    : 'Your planner is saved only in this browser until you sign in.';
 }
 
 function renderFocusClock() {
@@ -1643,11 +1733,16 @@ function bindEvents() {
     byId('authNote').textContent = authMode === 'signup' ? 'Choose a password with at least 6 characters.' : 'Sign in with the account you use in the Android app.';
   });
   byId('continueOffline').addEventListener('click', () => {
+    firebaseSignedIn = false;
+    setSyncStatus('local');
     document.body.classList.add('planner-open');
     byId('welcomeScreen').hidden = true;
     showToast('You are using this device only. Sign in to sync your planner.', 'info');
   });
   byId('signOutButton').addEventListener('click', () => window.StudyPlannerFirebase?.signOut());
+  byId('retrySyncButton').addEventListener('click', retryCloudSync);
+  byId('exportBackupButton').addEventListener('click', exportPlannerBackup);
+  byId('importBackupFile').addEventListener('change', handleBackupImport);
   byId('subjectTarget').addEventListener('input', updateTargetLabel);
   byId('subjectName').addEventListener('input', () => byId('subjectName').setCustomValidity(''));
   byId('darkModeSwitch').addEventListener('change', event => applyTheme(event.target.checked ? 'dark' : 'light'));
@@ -1683,6 +1778,7 @@ window.onFirebaseLoginResult = (success, email, plannerJson) => {
     byId('signInPassword').value = '';
     return;
   }
+  firebaseSignedIn = true;
   if (plannerJson) {
     try {
       const cloudState = JSON.parse(plannerJson);
@@ -1699,6 +1795,7 @@ window.onFirebaseLoginResult = (success, email, plannerJson) => {
   byId('signInPassword').value = '';
   byId('accountEmail').textContent = email;
   byId('accountCard').hidden = false;
+  setSyncStatus(plannerJson ? 'synced' : 'syncing');
   byId('welcomeScreen').hidden = true;
   document.body.classList.add('planner-open');
   byId('studentNameInput').value = state.studentName || '';
@@ -1714,6 +1811,8 @@ window.onFirebaseCloudData = plannerJson => {
     if (!cloudState || !Array.isArray(cloudState.subjects) || !Array.isArray(cloudState.tasks)) return;
     if (JSON.stringify(state) === JSON.stringify(cloudState)) return;
     state = cloudState;
+    firebaseSignedIn = true;
+    setSyncStatus('synced');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     byId('studentNameInput').value = state.studentName || '';
     syncTaskReminders();
@@ -1724,7 +1823,13 @@ window.onFirebaseCloudData = plannerJson => {
   }
 };
 
+window.onFirebaseSyncState = status => {
+  if (status === 'synced' || status === 'syncing' || status === 'error') setSyncStatus(status);
+};
+
 window.onFirebaseSignedOut = () => {
+  firebaseSignedIn = false;
+  setSyncStatus('local');
   adminAuthorized = false;
   byId('adminNavLink').hidden = true;
   if (currentPage === 'admin') showPage('dashboard');
@@ -1784,6 +1889,7 @@ function init() {
   loadAlarmSound();
   clockInterval = setInterval(renderFocusClock, 1000);
   renderAll();
+  syncTaskReminders();
   showPage(location.hash.slice(1));
 }
 

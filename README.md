@@ -18,8 +18,10 @@ A study planner for tracking subjects, exams, tasks, weekly plans, progress, and
 - Subjects, exam dates, study tasks, weekly planning, progress tracking, and dark mode.
 - Focus page with a Pomodoro timer, flip clock, task reminders, and alarm.
 - Optional email and password accounts with Firebase Authentication and Firestore sync.
+- Visible cloud-sync status, retry for failed saves, and JSON backup/restore.
 - Local-only mode for using the web app without signing in.
-- Android notifications and alarms. Android asks for notification permission when needed.
+- Android notifications and alarms. Task reminders are restored after reboot; Android asks for notification permission when needed.
+- Privacy and data information at [`privacy.html`](privacy.html).
 - Admin tools protected by a Firebase custom claim. See [Firebase admin setup](FIREBASE-ADMIN-SETUP.md).
 
 ## Run the web app
@@ -107,9 +109,10 @@ Admin access is assigned by a trusted Firebase project owner using a custom clai
 
 - Offline web data is saved in that browser's LocalStorage. Clearing browser data can remove it.
 - Signed-in planner data is stored in Firestore under the user's account and is shared between the web app and Android app.
+- Settings shows whether cloud sync succeeded and lets users download or restore a JSON planner backup.
 - Alarm audio selected on Android is a local file selection for that device. Web audio and browser alarms depend on browser permission and may not play while the page or device is asleep.
-- Android scheduled reminders use system notifications. Notification settings, silent mode, battery restrictions, and Do Not Disturb can affect delivery or sound.
-- The Android interface bundles its own copy of the web assets in `android/app/src/main/assets`. When changing the web interface, copy the corresponding updated HTML, CSS, JavaScript, and image assets into that folder to keep the apps aligned.
+- Android scheduled reminders use system notifications and are rescheduled after reboot. Notification permission, silent mode, battery restrictions, and Do Not Disturb can still affect delivery or sound.
+- The Android interface bundles its own copy of the web assets in `android/app/src/main/assets`, including `privacy.html`. Keep those copies aligned when changing the web interface.
 - Build output, local Android SDK paths, and dependency folders are ignored by Git.
 
 ## Project layout

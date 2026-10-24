@@ -57,7 +57,8 @@ function showAuthError(error) {
     'permission-denied': 'Firebase blocked access to the planner. Check the Firestore Rules.'
   };
   const message = messages[error?.code] || 'Could not connect to your account. Please try again.';
-  window.onFirebaseLoginResult?.(false, '', message);
+  if (auth.currentUser) window.onFirebaseSyncState?.('error');
+  else window.onFirebaseLoginResult?.(false, '', message);
 }
 
 window.StudyPlannerFirebase = {
@@ -72,14 +73,21 @@ window.StudyPlannerFirebase = {
   },
   savePlannerData(plannerJson) {
     const user = auth.currentUser;
-    if (!user || plannerJson === lastPlannerJson) return;
-    setDoc(doc(database, 'users', user.uid), {
+    if (!user) return;
+    if (plannerJson === lastPlannerJson) {
+      window.onFirebaseSyncState?.('synced');
+      return;
+    }
+    window.onFirebaseSyncState?.('syncing');
+    return setDoc(doc(database, 'users', user.uid), {
       plannerJson,
       email: user.email || '',
       updatedAt: serverTimestamp()
     }, { merge: true }).then(() => {
       lastPlannerJson = plannerJson;
+      window.onFirebaseSyncState?.('synced');
     }).catch(error => {
+      window.onFirebaseSyncState?.('error');
       if (error?.code === 'permission-denied') showAuthError(error);
     });
   },

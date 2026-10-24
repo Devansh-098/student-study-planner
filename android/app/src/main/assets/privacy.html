@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Learn what the Student Study Planner stores and how to manage your planner data.">
+  <title>Privacy and data · Student Study Planner</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('studyPlannerTheme') === 'dark' ? 'dark' : 'light');</script>
+</head>
+<body>
+  <main class="privacy-shell">
+    <a class="privacy-back" href="index.html">← Back to Study Planner</a>
+    <header class="privacy-header">
+      <img src="assets/images/logo.svg" alt="" class="brand-logo">
+      <p class="welcome-eyebrow">YOUR STUDY SPACE</p>
+      <h1>Privacy and your data</h1>
+      <p>Last updated: October 24, 2026</p>
+    </header>
+    <section class="privacy-card">
+      <h2>What the planner stores</h2>
+      <p>Your planner may contain your name, subjects, tasks, exam dates, task reminders, completion history, and study progress.</p>
+      <h2>Where it is stored</h2>
+      <ul>
+        <li><strong>Using the planner without an account:</strong> planner data is kept in this browser or on this device. It does not sync to your other devices.</li>
+        <li><strong>When you sign in:</strong> your email is handled by Firebase Authentication, and your planner data is synced using Firebase Cloud Firestore under your account.</li>
+        <li><strong>On Android:</strong> the app stores scheduled alarms and any custom alarm sound on the device so Android can use them. Task and reminder details follow the local or cloud storage choice above. Notifications may show the task title.</li>
+      </ul>
+      <p>Firebase is a Google service used to provide sign-in and cloud sync. The project does not include advertising or analytics features.</p>
+      <h2>Your choices</h2>
+      <ul>
+        <li>Use <strong>Continue on this device</strong> to keep planner data local.</li>
+        <li>Use <strong>Download backup</strong> in Settings to save a copy you control. Restoring a backup replaces the current planner and, when signed in, syncs it to your account.</li>
+        <li>Use <strong>Clear all data</strong> in Settings to clear the planner. When signed in, the empty planner syncs to your account too. Sign out to end the current session.</li>
+      </ul>
+      <p>Clearing browser or Android storage from device settings does not delete a copy already synced to Firebase. For a cloud-data deletion request or a privacy question, contact the project maintainer through <a href="https://github.com/Devansh-098/student-study-planner/issues" target="_blank" rel="noopener noreferrer">the project’s GitHub issues</a>. Do not post passwords or sensitive account details there.</p>
+      <p class="privacy-note">This page describes how this project is designed to handle planner data. Google’s own services may process data as needed to provide Firebase.</p>
+    </section>
+    <footer class="privacy-footer"><a href="index.html">Open the planner</a></footer>
+  </main>
+</body>
+</html>

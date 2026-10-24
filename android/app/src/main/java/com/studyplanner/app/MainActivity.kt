@@ -1,10 +1,8 @@
 package com.studyplanner.app
 
 import android.app.Activity
-import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.ContentValues
 import android.content.Intent
@@ -17,8 +15,6 @@ import android.Manifest
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
-import java.text.SimpleDateFormat
-import java.util.Locale
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -97,7 +93,13 @@ class MainActivity : Activity() {
                 assetLoader.shouldInterceptRequest(Uri.parse(url))
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                return request.url.host != "appassets.androidplatform.net"
+                if (request.url.host == "appassets.androidplatform.net") return false
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, request.url))
+                    true
+                } catch (_: Exception) {
+                    true
+                }
             }
         }
 
@@ -163,6 +165,32 @@ class MainActivity : Activity() {
             val uid = auth.currentUser?.uid ?: return
             database.collection("users").document(uid)
                 .set(mapOf("plannerJson" to json, "email" to auth.currentUser?.email.orEmpty(), "updatedAt" to FieldValue.serverTimestamp()), SetOptions.merge())
+                .addOnSuccessListener { runJs("window.onFirebaseSyncState && window.onFirebaseSyncState('synced')") }
+                .addOnFailureListener { runJs("window.onFirebaseSyncState && window.onFirebaseSyncState('error')") }
+        }
+
+        @JavascriptInterface
+        fun exportBackup(filename: String, json: String) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, "Open the web planner to download a backup on this Android version.", android.widget.Toast.LENGTH_LONG).show() }
+                return
+            }
+            val safeName = filename.substringAfterLast('/').substringAfterLast('\\').take(100).ifBlank { "study-planner-backup.json" }
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, safeName)
+                put(MediaStore.Downloads.MIME_TYPE, "application/json")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/Study Planner")
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            try {
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: throw IllegalStateException("Could not create the backup file.")
+                contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                    ?: throw IllegalStateException("Could not write the backup file.")
+                contentResolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, "Backup saved to Downloads / Study Planner.", android.widget.Toast.LENGTH_LONG).show() }
+            } catch (error: Exception) {
+                runOnUiThread { android.widget.Toast.makeText(this@MainActivity, error.localizedMessage ?: "Could not save the backup.", android.widget.Toast.LENGTH_LONG).show() }
+            }
         }
 
         @JavascriptInterface
@@ -182,53 +210,17 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun scheduleTaskReminders(json: String) {
-            try {
-                val tasks = org.json.JSONArray(json)
-                val prefs = getSharedPreferences("planner_reminders", MODE_PRIVATE)
-                val oldIds = prefs.getStringSet("task_ids", emptySet()).orEmpty().toSet()
-                val newIds = mutableSetOf<String>()
-                val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                for (index in 0 until tasks.length()) {
-                    val task = tasks.getJSONObject(index)
-                    val id = task.getString("id")
-                    val parsed = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).parse("${task.getString("date")} ${task.getString("time")}") ?: continue
-                    val at = parsed.time
-                    if (at <= System.currentTimeMillis()) continue
-                    val requestCode = ("task:" + id).hashCode()
-                    val intent = Intent(this@MainActivity, ReminderReceiver::class.java).apply {
-                        putExtra("title", "Study task reminder")
-                        putExtra("body", task.getString("title"))
-                        putExtra("notification_id", requestCode)
-                    }
-                    val pending = PendingIntent.getBroadcast(this@MainActivity, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
-                    newIds.add(id)
-                }
-                (oldIds - newIds).forEach { id ->
-                    val code = ("task:" + id).hashCode()
-                    val pending = PendingIntent.getBroadcast(this@MainActivity, code, Intent(this@MainActivity, ReminderReceiver::class.java), PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
-                    if (pending != null) alarmManager.cancel(pending)
-                }
-                prefs.edit().putStringSet("task_ids", newIds).apply()
-            } catch (_: Exception) { }
+            TaskReminderScheduler.scheduleTasks(this@MainActivity, json)
         }
 
         @JavascriptInterface
         fun scheduleAlarm(timestamp: Long, title: String, soundUri: String) {
-            val intent = Intent(this@MainActivity, ReminderReceiver::class.java).apply {
-                putExtra("title", title)
-                putExtra("body", "It is time for your planned study session.")
-                putExtra("notification_id", 0x534450 + 1)
-                putExtra("sound_uri", soundUri.ifBlank { getSharedPreferences("planner_reminders", MODE_PRIVATE).getString("alarm_sound_uri", "") })
-            }
-            val pending = PendingIntent.getBroadcast(this@MainActivity, 0x534450 + 1, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            (getSystemService(Context.ALARM_SERVICE) as AlarmManager).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pending)
+            TaskReminderScheduler.scheduleAlarm(this@MainActivity, timestamp, title, soundUri)
         }
 
         @JavascriptInterface
         fun cancelAlarm() {
-            val pending = PendingIntent.getBroadcast(this@MainActivity, 0x534450 + 1, Intent(this@MainActivity, ReminderReceiver::class.java), PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
-            if (pending != null) (getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pending)
+            TaskReminderScheduler.cancelAlarm(this@MainActivity)
         }
 
         @JavascriptInterface

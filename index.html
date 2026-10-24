@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/enhancements.css">
     <script>
         document.documentElement.setAttribute('data-theme', localStorage.getItem('studyPlannerTheme') === 'dark' ? 'dark' : 'light');
     </script>
@@ -21,7 +22,12 @@
             <div class="welcome-logo"><img src="assets/images/logo.svg" alt=""></div>
             <p class="welcome-eyebrow">YOUR STUDY SPACE</p>
             <h1 id="welcomeTitle">Make time for what matters.</h1>
-            <p class="welcome-copy">Plan your study sessions, stay on top of deadlines, and keep your planner synced across devices.</p>
+            <p class="welcome-copy">Organise subjects and deadlines, plan study sessions, and see your progress. Sign in to sync your planner between the web app and Android.</p>
+            <ul class="welcome-highlights" aria-label="Planner features">
+                <li><i data-lucide="calendar-check"></i> Plan tasks and study reminders</li>
+                <li><i data-lucide="chart-column"></i> Track study progress</li>
+                <li><i data-lucide="smartphone"></i> Sync across your devices</li>
+            </ul>
             <form id="signInForm" class="welcome-form">
                 <label class="field"><span>Email address</span><input type="email" id="signInEmail" autocomplete="email" placeholder="you@example.com" required></label>
                 <label class="field"><span>Password</span><input type="password" id="signInPassword" autocomplete="current-password" placeholder="Enter your password" required></label>
@@ -32,6 +38,7 @@
             <div class="welcome-divider"><span>OR</span></div>
             <button class="btn btn-light welcome-offline" id="continueOffline" type="button">Continue on this device</button>
             <p class="welcome-footnote">Offline changes stay on this device until you sign in.</p>
+            <a class="welcome-policy-link" href="privacy.html">Privacy and data</a>
         </div>
     </section>
     <div class="app">
@@ -414,9 +421,13 @@
 
                         <div class="card">
                             <h2 class="card-title">Your Data</h2>
-                            <p class="card-subtitle settings-hint">Everything is saved in this browser using LocalStorage. Nothing is uploaded anywhere.</p>
+                            <p class="card-subtitle settings-hint" id="dataStorageCopy">Your planner is saved only in this browser until you sign in.</p>
+                            <p class="sync-status" id="syncStatus" data-state="local" role="status" aria-live="polite">Saved on this device. Sign in to sync across devices.</p>
+                            <button class="btn btn-light sync-retry" id="retrySyncButton" type="button" hidden>Retry sync</button>
                             <ul class="data-summary" id="dataSummary"></ul>
                             <div class="settings-actions">
+                                <button class="btn btn-light" id="exportBackupButton" type="button"><i data-lucide="download"></i> Download backup</button>
+                                <label class="btn btn-light backup-import-button"><i data-lucide="upload"></i> Restore backup<input type="file" id="importBackupFile" accept=".json,application/json"></label>
                                 <button class="btn btn-light" data-action="load-sample">
                   <i data-lucide="rotate-ccw"></i>
                   Load sample data
@@ -487,7 +498,7 @@
             <input type="date" id="taskDeadline">
           </label>
                 </div>
-                <label class="field"><span>Reminder <em>(optional)</em></span><input type="time" id="taskReminder"><small class="field-help">At this time on the study date, the app can remind you about this task.</small></label>
+                <label class="field"><span>Reminder <em>(optional)</em></span><input type="time" id="taskReminder"><small class="field-help">At this time on the study date. Android restores scheduled reminders after a device restart; notifications must be allowed.</small></label>
                 <div class="field-row">
                     <label class="field">
             <span>Priority</span>
