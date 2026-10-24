@@ -1,5 +1,9 @@
 # Student Study Planner
 
+## Live web app
+
+Try the deployed web app: [https://student-study-planner-nine-sandy.vercel.app](https://student-study-planner-nine-sandy.vercel.app)
+
 A study planner for tracking subjects, exams, tasks, weekly plans, progress, and focus sessions. The repository contains both the browser app and an Android app.
 
 ## Apps in this repository
